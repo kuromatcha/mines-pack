@@ -1,0 +1,8 @@
+[project]
+name = "comfyui-mines-pack"
+version = "1.0.0"
+description = "Prompt Sections and manual numbered PNG saving for ComfyUI Nodes 2.0."
+requires-python = ">=3.10"
+
+[tool.comfy]
+DisplayName = "mine's pack"
