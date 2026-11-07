@@ -8,9 +8,9 @@ from unittest.mock import patch
 
 from PIL import Image
 
-spec = importlib.util.spec_from_file_location("exporter", Path(__file__).parents[1] / "exporter.py")
-exporter = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(exporter)
+spec = importlib.util.spec_from_file_location("png", Path(__file__).parents[1] / "png.py")
+png = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(png)
 
 
 class ExportTests(unittest.TestCase):
@@ -23,7 +23,7 @@ class ExportTests(unittest.TestCase):
         self.dest = self.root / "exports"
 
     def save(self, **kwargs):
-        return exporter.export_png(self.source, self.dest, kwargs.pop("prefix", ""),
+        return png.export_png(self.source, self.dest, kwargs.pop("prefix", ""),
                                    kwargs.pop("padding", 5), **kwargs)
 
     def test_empty_and_gaps(self):
@@ -70,7 +70,7 @@ class ExportTests(unittest.TestCase):
                 self.save(padding=padding)
 
     def test_write_failure_removes_partial(self):
-        with patch.object(exporter.os, "fsync", side_effect=OSError("Disk full")):
+        with patch.object(png.os, "fsync", side_effect=OSError("Disk full")):
             with self.assertRaises(OSError):
                 self.save()
         self.assertEqual(list(self.dest.glob("*.png")), [])

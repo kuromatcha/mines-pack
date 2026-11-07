@@ -15,7 +15,7 @@ from PIL import Image
 import folder_paths
 from comfy.cli_args import args
 from server import PromptServer
-from .exporter import export_png
+from .png import export_png
 
 _lock = threading.RLock()
 _batches = {}
@@ -64,7 +64,7 @@ class NumberedPNGSaver:
 
     @classmethod
     def IS_CHANGED(cls, **kwargs):
-        # Ensure every queue run refreshes the preview and its generation metadata.
+        # Refresh staged images and generation metadata on each run.
         return float("nan")
 
     def stage(self, images, folder="", filename_prefix="", number_padding=5,

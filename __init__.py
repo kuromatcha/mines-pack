@@ -1,6 +1,6 @@
 """mine's pack: Prompt Sections and manual numbered PNG saving."""
-from .prompt_sections import PromptSectionsCond
-from .numbered_png_saver import NumberedPNGSaver
+from .prompt import PromptSectionsCond
+from .save import NumberedPNGSaver
 
 PromptSectionsCond.CATEGORY = "mine's pack"
 NumberedPNGSaver.CATEGORY = "mine's pack"

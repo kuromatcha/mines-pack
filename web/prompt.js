@@ -1,5 +1,5 @@
 import { app } from "../../scripts/app.js";
-import { mountTextPresets, PRESET_CSS, PRESET_HEIGHT, FOOTER_HEIGHT } from "./text_presets.js";
+import { mountTextPresets, PRESET_CSS, PRESET_HEIGHT, FOOTER_HEIGHT } from "./presets.js";
 
 const BOX_HEIGHT = 36;
 const LABELS = { quality: "quality", style_1: "style", style_2: "selective style", style_3: "selective style 2" };
