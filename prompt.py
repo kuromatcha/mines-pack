@@ -5,35 +5,44 @@ class PromptSectionsCond:
             "required": {
                 "clip": ("CLIP",),
                 "quality": ("STRING", {"multiline": True, "placeholder": "quality", "default": "masterpiece, best quality, very aesthetic"}),
-                "style_1": ("STRING", {"multiline": True, "placeholder": "style", "default": ""}),
-                "style_2": ("STRING", {"multiline": True, "placeholder": "selective style", "default": ""}),
+                "style_1": ("STRING", {"multiline": True, "placeholder": "style 1", "default": ""}),
+                "style_2": ("STRING", {"multiline": True, "placeholder": "style 2", "default": ""}),
             },
             "optional": {
-                "style_3": ("STRING", {"multiline": True, "placeholder": "selective style 2", "default": ""}),
-                "prompt": ("STRING", {"multiline": True, "placeholder": "prompt", "default": ""}),
+                "style_3": ("STRING", {"multiline": True, "placeholder": "style 3", "default": ""}),
+                "prompt": ("STRING", {"multiline": True, "placeholder": "positive prompt", "default": ""}),
+                "negative_prompt": ("STRING", {"multiline": True, "placeholder": "negative prompt", "default": ""}),
             },
         }
 
-    RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "CONDITIONING")
-    RETURN_NAMES = ("main", "selective", "selective 2")
+    # Appended outputs keep existing workflow links on their original slots.
+    RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "CONDITIONING", "CONDITIONING")
+    RETURN_NAMES = ("style 1", "style 2", "style 3", "negative")
     FUNCTION = "encode"
     CATEGORY = "conditioning"
 
     @staticmethod
     def _clean(text):
-        return text.strip().rstrip(",").strip()
+        return (text or "").strip().rstrip(",").strip()
 
-    @staticmethod
-    def _encode(clip, text):
-        tokens = clip.tokenize(text)
-        return clip.encode_from_tokens_scheduled(tokens)
+    @classmethod
+    def build_texts(cls, quality, style_1, style_2, prompt="", style_3="", negative_prompt=""):
+        """Return the four texts encoded by the outputs, in output order.
 
-    def encode(self, clip, quality, style_1, style_2, prompt="", style_3=""):
+        web/prompt_split.js mirrors this so the queued prompt can encode each
+        output separately (see README)."""
+        q, p = cls._clean(quality), cls._clean(prompt)
+        styles = [", ".join(s for s in (q, cls._clean(style), p) if s) for style in (style_1, style_2, style_3)]
+        return (*styles, cls._clean(negative_prompt))
+
+    def encode(self, clip, quality, style_1, style_2, prompt="", style_3="", negative_prompt=""):
         if clip is None:
             raise RuntimeError("clip input is None")
-        q, s1, s2, p = map(self._clean, (quality, style_1, style_2, prompt))
-        s3 = self._clean(style_3)
-        main = ", ".join(s for s in (q, s1, p) if s)
-        selective = ", ".join(s for s in (q, s2, p) if s)
-        selective_2 = ", ".join(s for s in (q, s3, p) if s)
-        return (self._encode(clip, main), self._encode(clip, selective), self._encode(clip, selective_2))
+        encoded = {}
+        results = []
+        for text in self.build_texts(quality, style_1, style_2, prompt, style_3, negative_prompt):
+            # Identical sections share one encode.
+            if text not in encoded:
+                encoded[text] = clip.encode_from_tokens_scheduled(clip.tokenize(text))
+            results.append(encoded[text])
+        return tuple(results)

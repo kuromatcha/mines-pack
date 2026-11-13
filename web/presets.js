@@ -170,7 +170,7 @@ export function mountTextPresets(node, notifyChange = () => {}) {
     setItem: (key, value) => window.localStorage.setItem(key, value),
   });
   const rows = [];
-  const sections = { quality: "Quality", prompt: "Prompt" };
+  const sections = { quality: "Quality", prompt: "Positive prompt" };
   let refresh;
   let status;
   const editor = element("form");

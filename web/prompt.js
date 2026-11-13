@@ -1,75 +1,62 @@
 import { app } from "../../scripts/app.js";
 import { mountTextPresets, PRESET_CSS, PRESET_HEIGHT, FOOTER_HEIGHT } from "./presets.js";
+import { splitPromptSections } from "./prompt_split.js";
 
-const BOX_HEIGHT = 36;
-const LABELS = { quality: "quality", style_1: "style", style_2: "selective style", style_3: "selective style 2" };
+const LINE_HEIGHT = 20;
+const BOX_PADDING = 6;
+// Fixed-height fields; the positive prompt ("prompt") is left free to absorb extra height.
+const FIELDS = {
+  quality: { label: "quality", lines: 1 },
+  style_1: { label: "style 1", lines: 1 },
+  style_2: { label: "style 2", lines: 1 },
+  style_3: { label: "style 3", lines: 1 },
+  negative_prompt: { label: "negative prompt", lines: 2 },
+};
+const PROMPT_LABEL = "positive prompt";
+const OUTPUT_LABELS = ["style 1", "style 2", "style 3", "negative"];
 
 // The Vue renderer creates its own textareas instead of using widget.element.
 // Its grid uses an auto row for every textarea, which otherwise shares growth.
+// Children: 1-4 one-line fields, 5 positive prompt (grows), 6 negative prompt
+// (two lines), 7-8 preset rows, 9 import/export footer.
+const COMPACT = 48;
+const NEGATIVE = 64;
+const SEL = `.lg-node-widgets:has([node-type="PromptSectionsCond"])`;
+const CHILD = `${SEL} > :is(.lg-node-widget, div:has(> .lg-node-widget))`;
 const VUE_LAYOUT = `
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) {
+${SEL} {
   grid-template-columns: min-content minmax(0,0fr) minmax(80px,1fr) !important;
-  grid-template-rows: repeat(4,48px) minmax(80px,1fr) ${PRESET_HEIGHT}px ${PRESET_HEIGHT}px ${FOOTER_HEIGHT}px !important;
+  grid-template-rows: repeat(4,${COMPACT}px) minmax(80px,1fr) ${NEGATIVE}px ${PRESET_HEIGHT}px ${PRESET_HEIGHT}px ${FOOTER_HEIGHT}px !important;
   flex: 1 1 0% !important;
-  min-height: ${4 * 48 + 80 + 2 * PRESET_HEIGHT + FOOTER_HEIGHT + 7 * 4}px;
+  min-height: ${4 * COMPACT + 80 + NEGATIVE + 2 * PRESET_HEIGHT + FOOTER_HEIGHT + 8 * 4}px;
 }
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)) {
-  min-height: 0;
-  grid-column: 1 / -1 !important;
+${CHILD} { min-height: 0; grid-column: 1 / -1 !important; }
+${CHILD}:nth-child(-n+6) [node-type="PromptSectionsCond"] { grid-column:2/-1 !important; min-width:0; }
+${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(row => `${CHILD}:nth-child(${row}) { grid-row:${row}; }`).join("\n")}
+${CHILD}:nth-child(-n+4) { height:${COMPACT}px; max-height:${COMPACT}px; }
+${CHILD}:nth-child(-n+4) textarea {
+  height:${COMPACT}px !important; min-height:${COMPACT}px !important; max-height:${COMPACT}px !important;
+  box-sizing:border-box; padding-top:20px; padding-bottom:8px; line-height:16px;
+  white-space:pre; overflow:hidden !important; resize:none;
 }
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(-n+5) [node-type="PromptSectionsCond"] {
-  grid-column:2/-1 !important;
-  min-width:0;
+${CHILD}:nth-child(5) { min-height:80px; }
+${CHILD}:nth-child(5) textarea {
+  height:100% !important; min-height:80px !important; max-height:none !important;
+  box-sizing:border-box; resize:none;
 }
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(1) { grid-row:1; }
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(2) { grid-row:2; }
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(3) { grid-row:3; }
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(4) { grid-row:4; }
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(5) { grid-row:5; }
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(-n+4) {
-  height: 48px;
-  max-height: 48px;
+${CHILD}:nth-child(6) { height:${NEGATIVE}px; max-height:${NEGATIVE}px; }
+${CHILD}:nth-child(6) textarea {
+  height:${NEGATIVE}px !important; min-height:${NEGATIVE}px !important; max-height:${NEGATIVE}px !important;
+  box-sizing:border-box; padding-top:20px; padding-bottom:12px; line-height:16px;
+  white-space:pre-wrap; overflow-x:hidden !important; overflow-y:auto !important; resize:none;
 }
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(-n+4) textarea {
-  height: 48px !important;
-  min-height: 48px !important;
-  max-height: 48px !important;
-  box-sizing: border-box;
-  padding-top: 20px;
-  padding-bottom: 8px;
-  line-height: 16px;
-  white-space: pre;
-  overflow: hidden !important;
-  resize: none;
+${CHILD}:nth-child(7), ${CHILD}:nth-child(8) {
+  grid-column:2/-1 !important; display:block; align-self:start;
+  height:${PRESET_HEIGHT}px !important; min-height:${PRESET_HEIGHT}px !important; max-height:${PRESET_HEIGHT}px !important;
 }
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(5) {
-  min-height: 80px;
-}
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(5) textarea {
-  height: 100% !important;
-  min-height: 80px !important;
-  max-height: none !important;
-  box-sizing: border-box;
-  resize: none;
-}
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(6),
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(7) {
-  grid-column:2/-1 !important;
-  display:block;
-  align-self:start;
-  height:${PRESET_HEIGHT}px !important;
-  min-height:${PRESET_HEIGHT}px !important;
-  max-height:${PRESET_HEIGHT}px !important;
-}
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(6) { grid-row:6; }
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(7) { grid-row:7; }
-.lg-node-widgets:has([node-type="PromptSectionsCond"]) > :is(.lg-node-widget, div:has(> .lg-node-widget)):nth-child(8) {
-  grid-column:2/-1 !important;
-  grid-row:8;
-  display:block;
-  height:${FOOTER_HEIGHT}px !important;
-  min-height:${FOOTER_HEIGHT}px !important;
-  max-height:${FOOTER_HEIGHT}px !important;
+${CHILD}:nth-child(9) {
+  grid-column:2/-1 !important; display:block;
+  height:${FOOTER_HEIGHT}px !important; min-height:${FOOTER_HEIGHT}px !important; max-height:${FOOTER_HEIGHT}px !important;
 }
 `;
 
@@ -84,65 +71,77 @@ function restoreLegacySectionValues(node, saved) {
       const widget = node.widgets?.find(item => item.name === name);
       if (widget && typeof values[index] === "string") widget.value = values[index];
     }
-    if (values.length === 4) {
-      const addedStyle = node.widgets?.find(widget => widget.name === "style_3");
-      if (addedStyle) addedStyle.value = "";
+    for (const name of values.length === 4 ? ["style_3", "negative_prompt"] : ["negative_prompt"]) {
+      const widget = node.widgets?.find(item => item.name === name);
+      if (widget) widget.value = "";
     }
   }
   node.properties = { ...node.properties, promptSectionsOrder: 2 };
 }
 
 function lockCompactFields(node) {
-  // Restored workflows may have only the original two outputs. Append, never
-  // reorder or replace those ports, so their existing links stay attached.
-  if (node.outputs?.length === 2 && typeof node.addOutput === "function") {
-    node.addOutput("selective 2", "CONDITIONING");
+  // Restored workflows may have fewer outputs. Append, never reorder or
+  // replace existing ports, so their links stay attached.
+  while (node.outputs && node.outputs.length < OUTPUT_LABELS.length && typeof node.addOutput === "function") {
+    node.addOutput(OUTPUT_LABELS[node.outputs.length], "CONDITIONING");
   }
-  for (const [index, label] of ["main", "selective", "selective 2"].entries()) {
+  for (const [index, label] of OUTPUT_LABELS.entries()) {
     if (!node.outputs?.[index]) continue;
     node.outputs[index].name = label;
     node.outputs[index].label = label;
   }
   for (const widget of node.widgets || []) {
-    const label = LABELS[widget.name];
-    if (!label || widget.type === "hidden" || widget.hidden) continue;
-    widget.label = label;
+    if (widget.type === "hidden" || widget.hidden) continue;
+    if (widget.name === "prompt") {
+      // Leave its height alone so its native layout absorbs extra height.
+      widget.label = PROMPT_LABEL;
+      const textarea = findTextarea(widget);
+      if (textarea) textarea.placeholder = PROMPT_LABEL;
+      continue;
+    }
+    const field = FIELDS[widget.name];
+    if (!field) continue;
+    widget.label = field.label;
     widget.options = widget.options || {};
-    // Reserve the renderer's top/bottom margins outside the visible line.
+    const boxHeight = field.lines * LINE_HEIGHT + 2 * BOX_PADDING;
+    // Reserve the renderer's top/bottom margins outside the visible lines.
     const margin = widget.margin ?? widget.options.margin ?? 10;
-    const layoutHeight = BOX_HEIGHT + margin * 2;
+    const layoutHeight = boxHeight + margin * 2;
     widget.options.getMinHeight = () => layoutHeight;
     widget.options.getMaxHeight = () => layoutHeight;
     widget.options.getHeight = () => layoutHeight;
 
-    const element = widget.element || widget.inputEl;
-    const textarea = element?.tagName === "TEXTAREA"
-      ? element
-      : element?.querySelector?.("textarea");
+    const textarea = findTextarea(widget);
     if (!textarea) continue;
-    textarea.placeholder = label;
-    textarea.rows = 1;
-    textarea.wrap = "off";
+    const multiLine = field.lines > 1;
+    textarea.placeholder = field.label;
+    textarea.rows = field.lines;
+    textarea.wrap = multiLine ? "soft" : "off";
     Object.assign(textarea.style, {
       resize: "none",
       boxSizing: "border-box",
-      lineHeight: "20px",
-      padding: "6px 8px",
-      whiteSpace: "pre",
+      lineHeight: `${LINE_HEIGHT}px`,
+      padding: `${BOX_PADDING}px 8px`,
+      whiteSpace: multiLine ? "pre-wrap" : "pre",
       overflowX: "hidden",
-      overflowY: "hidden",
+      overflowY: multiLine ? "auto" : "hidden",
       flexGrow: "0",
       flexShrink: "0",
     });
     // Lock visible height even when a renderer assigns inline height.
     for (const property of ["height", "min-height", "max-height"]) {
-      textarea.style.setProperty(property, `${BOX_HEIGHT}px`, "important");
+      textarea.style.setProperty(property, `${boxHeight}px`, "important");
     }
   }
   for (const input of node.inputs || []) {
-    if (LABELS[input.name]) input.label = LABELS[input.name];
+    const label = input.name === "prompt" ? PROMPT_LABEL : FIELDS[input.name]?.label;
+    if (label) input.label = label;
   }
-  // Leave Prompt untouched so its native layout absorbs extra height.
+}
+
+function findTextarea(widget) {
+  const element = widget.element || widget.inputEl;
+  return element?.tagName === "TEXTAREA" ? element : element?.querySelector?.("textarea");
 }
 
 app.registerExtension({
@@ -152,6 +151,19 @@ app.registerExtension({
     style.id = "prompt-sections-layout";
     style.textContent = VUE_LAYOUT + PRESET_CSS;
     document.head.appendChild(style);
+
+    // Queue each output as its own text encode so editing one section only
+    // re-runs the samplers that use it (see README).
+    const graphToPrompt = app.graphToPrompt;
+    app.graphToPrompt = async function (...args) {
+      const result = await graphToPrompt.apply(this, args);
+      try {
+        if (result?.output) splitPromptSections(result.output);
+      } catch (error) {
+        console.warn("[mine's pack] prompt node left unsplit:", error);
+      }
+      return result;
+    };
   },
   nodeCreated(node) {
     if (node.comfyClass !== "PromptSectionsCond") return;
