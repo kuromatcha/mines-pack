@@ -60,7 +60,7 @@ class NumberedPNGSaver:
     FUNCTION = "stage"
     OUTPUT_NODE = True
     CATEGORY = "image/saving"
-    DESCRIPTION = "Click Save to save the first input image without rerunning generation."
+    DESCRIPTION = "Click Save in the top bar to save the first input image without rerunning generation."
 
     @classmethod
     def IS_CHANGED(cls, **kwargs):

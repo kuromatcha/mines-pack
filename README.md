@@ -3,7 +3,7 @@
 ![prompt and save](assets/showcase.jpg)
 
 - **prompt** — quality, style 1–3, a positive prompt and a two-line negative prompt, with presets. Outputs **style 1**, **style 2** and **style 3** (quality + that style + positive prompt) and **negative**.
-- **save** — save the first image as a numbered PNG, with optional metadata.
+- **save** — save the first image as a numbered PNG, with optional metadata. Click **Save** in the top bar to save the latest run.
 
 Clone into ComfyUI's `custom_nodes` folder, then restart ComfyUI:
 
