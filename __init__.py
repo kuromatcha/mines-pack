@@ -3,6 +3,7 @@ from .prompt import PromptSectionsCond
 from .save import NumberedPNGSaver
 from .video import MinesLoadImageOptional, MinesSVIProEndFrame
 from .color import MinesColorDriftFix, MinesKeepSourceColors
+from .mask import MinesBackgroundRemovalResolution, MinesMaskTemporalSmooth
 from .winfix import quiet_socket_reset
 
 NODE_CLASS_MAPPINGS = {
@@ -12,6 +13,8 @@ NODE_CLASS_MAPPINGS = {
     "MinesSVIProEndFrame": MinesSVIProEndFrame,
     "MinesColorDriftFix": MinesColorDriftFix,
     "MinesKeepSourceColors": MinesKeepSourceColors,
+    "MinesBackgroundRemovalResolution": MinesBackgroundRemovalResolution,
+    "MinesMaskTemporalSmooth": MinesMaskTemporalSmooth,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "PromptSectionsCond": "prompt",
@@ -20,6 +23,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MinesSVIProEndFrame": "SVIPro end frame",
     "MinesColorDriftFix": "color drift fix",
     "MinesKeepSourceColors": "keep source colors",
+    "MinesBackgroundRemovalResolution": "background removal resolution",
+    "MinesMaskTemporalSmooth": "mask temporal smooth",
 }
 for node in NODE_CLASS_MAPPINGS.values():
     node.CATEGORY = "mine's pack"
