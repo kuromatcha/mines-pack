@@ -224,9 +224,15 @@ class MinesColorDriftFix:
 class MinesKeepSourceColors:
     """An upscaler should only add detail, but RTX Video Super Resolution also shifts colors a little, and by a
     different amount on each frame (measured on a white background: 0.1 to 0.4 dE, frame to frame). Next to each
-    other in a video, and especially at a loop point, that reads as a small color flicker. This node maps each
-    upscaled frame back to the colors of the same frame before upscaling. The two are pixel-for-pixel the same
-    picture, so a tone curve per Lab channel (fitted on a small copy of both) matches them exactly; detail is kept."""
+    other in a video, and especially at a loop point, that reads as a small color flicker. This node gives each
+    upscaled frame back the colors of the same frame before upscaling, pixel by pixel: the two are the same
+    picture, so the upscaled frame keeps only its fine detail (what a small blur removes) and takes everything
+    coarser, colors included, from the source frame enlarged to the same size (detail transfer, as in StableSR's
+    color fix). No fitting, so nothing can vary from frame to frame. A first version fitted a tone curve per Lab
+    channel; that could not tell a white background from a grey of the same tint and left the white half corrected
+    (measured 0.22 dE left, with more frame-to-frame jitter than RTX alone; detail transfer: 0.01 dE, no jitter)."""
+
+    BLUR_PER_SCALE = 1.0  # blur sigma in upscaled pixels per unit of upscale factor (2 at 2x)
 
     @classmethod
     def INPUT_TYPES(s):
@@ -246,20 +252,23 @@ class MinesKeepSourceColors:
         import kornia
         if images.shape[0] != source.shape[0]:
             raise ValueError(f"Keep source colors: {images.shape[0]} upscaled frames but {source.shape[0]} source frames.")
-        fit = MinesColorDriftFix
         device = _device()
         out = torch.empty_like(images)
         h, w = images.shape[1:3]
+        scale = max(h / source.shape[1], w / source.shape[2])
+        sigma = max(1.0, self.BLUR_PER_SCALE * scale)
+        k = int(sigma * 3) * 2 + 1
+
+        def blur(t):
+            return kornia.filters.gaussian_blur2d(t, (k, k), (sigma, sigma), border_type="reflect")
+
         for i in range(images.shape[0]):
             x = images[i:i + 1].to(device).float()
-            up = fit._small_lab(images[i:i + 1], device)
-            src = kornia.color.rgb_to_lab(torch.nn.functional.interpolate(
-                source[i:i + 1, ..., :3].to(device).movedim(-1, 1).float().clamp(0, 1), size=up.shape[-2:], mode="area"))
-            curves, _ = fit._fit_curve(up.view(3, -1), src.view(3, -1))
-            lab = kornia.color.rgb_to_lab(x[..., :3].movedim(-1, 1).clamp(0, 1))[0]
-            lab = lab + fit._apply_curve(lab, curves)
-            lab[0].clamp_(0, 100)
-            rgb = kornia.color.lab_to_rgb(lab[None]).clamp(0, 1).movedim(1, -1)
+            up = x[..., :3].movedim(-1, 1).clamp(0, 1)
+            src = source[i:i + 1, ..., :3].to(device).movedim(-1, 1).float().clamp(0, 1)
+            if src.shape[-2:] != up.shape[-2:]:
+                src = torch.nn.functional.interpolate(src, size=up.shape[-2:], mode="bicubic", align_corners=False).clamp(0, 1)
+            rgb = (up - blur(up) + blur(src)).clamp(0, 1).movedim(1, -1)
             if images.shape[-1] > 3:
                 rgb = torch.cat([rgb, x[..., 3:]], dim=-1)
             out[i:i + 1] = rgb.to(out.device, out.dtype)

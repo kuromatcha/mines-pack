@@ -12,7 +12,7 @@ For the [Mine's video workflows](https://github.com/kuromatcha/mines-img2vid):
 - **load image (optional)** — Load Image with a "none" choice that outputs nothing, for optional end images.
 - **SVIPro end frame** — KJNodes' Wan Image To Video SVIPro with an optional end image on the last frame.
 - **color drift fix** — removes slow color drift (brightness, warmth, saturation, skin tone) so later frames keep the tone of the first frame; in a loop the end matches the start. Motion and short flashes are left alone.
-- **keep source colors** — gives upscaled frames back the exact colors of the frames before upscaling (RTX upscaling shifts them slightly, differently per frame).
+- **keep source colors** — gives upscaled frames back the exact colors of the frames before upscaling (RTX upscaling shifts them slightly, differently per frame). Keeps the upscaler's fine detail and takes the colors pixel by pixel from the source frame.
 
 On Windows the pack also hides the harmless *WinError 10054* traceback ComfyUI logs when a browser tab closes.
 
