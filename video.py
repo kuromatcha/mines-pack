@@ -1,12 +1,10 @@
 """Image-to-video helpers for the Mine's video workflows (github.com/kuromatcha/mines-img2vid).
 
-- load image (optional): like Load Image, plus a "none" choice that outputs nothing, so a node that takes an
-  optional image (Wan First-Last-Frame to Video, SVIPro end frame) simply skips it.
 - SVIPro end frame: KJNodes' Wan Image To Video SVIPro, plus an optional end image that is placed on the last
   frame the same way the core Wan First-Last-Frame to Video node does it.
 - H3 frame guides: pins an optional first and an optional last frame onto MiniMax H3 conditioning with ComfyUI's
   own Add Guide for MiniMax H3, so references (Ref2VA) and keyframes can be used in one clip. A missing frame
-  ("none" on load image (optional)) is skipped instead of raising an error.
+  (its Load Image bypassed) is skipped instead of raising an error.
 """
 import torch
 
@@ -15,32 +13,6 @@ import comfy.model_management
 import comfy.utils
 import node_helpers
 import nodes
-
-NONE = "none"
-
-
-class MinesLoadImageOptional(nodes.LoadImage):
-    @classmethod
-    def INPUT_TYPES(s):
-        files = nodes.LoadImage.INPUT_TYPES()["required"]["image"][0]
-        return {"required": {"image": ([NONE] + files, {"image_upload": True, "default": NONE})}}
-
-    CATEGORY = "image"
-    DESCRIPTION = 'Load Image with a "none" choice. At "none" it outputs nothing and the image is skipped.'
-
-    def load_image(self, image):
-        if image == NONE:
-            return (None, None)
-        return super().load_image(image)
-
-    @classmethod
-    def IS_CHANGED(s, image):
-        return NONE if image == NONE else nodes.LoadImage.IS_CHANGED(image)
-
-    @classmethod
-    def VALIDATE_INPUTS(s, image):
-        return True if image == NONE else nodes.LoadImage.VALIDATE_INPUTS(image)
-
 
 class MinesSVIProEndFrame:
     @classmethod
@@ -125,7 +97,7 @@ class MinesH3FrameGuides:
     CATEGORY = "conditioning/video_models"
     DESCRIPTION = ("Pins the first frame at frame 0 and the last frame at the end of a MiniMax H3 video (ComfyUI's "
                    "Add Guide for MiniMax H3). Works on Reference to Video conditioning, so references and keyframes "
-                   "can be combined. A frame that is not connected or set to none is skipped.")
+                   "can be combined. A frame that is not connected (or its Load Image bypassed) is skipped.")
 
     def guide(self, positive, vae, latent, first_frame=None, last_frame=None):
         add_guide = _h3_add_guide()
