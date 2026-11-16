@@ -5,6 +5,7 @@ Shows as **mine's pack** in ComfyUI.
 ![prompt and save](assets/showcase.jpg)
 
 - **prompt** — quality, style 1–3, a positive prompt and a two-line negative prompt, with presets. Outputs **style 1**, **style 2** and **style 3** (quality + that style + positive prompt) and **negative**.
+- **pick style** — passes on style 1, 2 or 3 of the prompt node by number; the styles not picked are not encoded. The number only goes up to the highest connected style.
 - **save** — save the first image as a numbered PNG, with optional metadata. Click **Save** in the top bar to save the latest run.
 
 For the [Mine's video workflows](https://github.com/kuromatcha/mines-img2vid):
@@ -19,6 +20,12 @@ For [mines-ghost](https://github.com/kuromatcha/mines-ghost) video cutouts:
 
 - **background removal resolution** — sets the working size of ComfyUI's built-in background removal model, which always uses 1024. BiRefNet-HR is trained at 2048 and keeps thin hair much steadier there.
 - **mask temporal smooth** — steadies a per-frame mask (Remove Background run frame by frame) so its edges stop flickering. Neighbouring frames are lined up by their motion first (optical flow), so swaying and moving parts are smoothed without ghosting. Turn **loop** on for looping clips.
+
+For the Mine's Anima Inpaint workflow:
+
+- **inpaint crop** — cuts the masked area out with its surroundings and scales it to the model's working size, so a small area is redrawn at full detail.
+- **inpaint stitch** — scales the redrawn cut back and blends it into the original picture with a soft edge. Pixels outside the blend are unchanged.
+- On a subgraph's settings node, the prompt node's fields keep its layout when promoted: `quality`, `style` and `style_1`–`style_3` one line, `negative_prompt` two lines.
 
 On Windows the pack also hides the harmless *WinError 10054* traceback ComfyUI logs when a browser tab closes.
 

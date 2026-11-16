@@ -46,3 +46,28 @@ class PromptSectionsCond:
                 encoded[text] = clip.encode_from_tokens_scheduled(clip.tokenize(text))
             results.append(encoded[text])
         return tuple(results)
+
+
+class MinesPickStyle:
+    """Passes on one of the prompt node's three styles. The styles not picked are not encoded."""
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {"style": ("INT", {"default": 1, "min": 1, "max": 3})},
+            "optional": {name: ("CONDITIONING", {"lazy": True}) for name in ("style_1", "style_2", "style_3")},
+        }
+
+    RETURN_TYPES = ("CONDITIONING",)
+    FUNCTION = "pick"
+    CATEGORY = "conditioning"
+
+    def check_lazy_status(self, style, **styles):
+        name = f"style_{style}"
+        return [name] if styles.get(name) is None else []
+
+    def pick(self, style, **styles):
+        picked = styles.get(f"style_{style}")
+        if picked is None:
+            raise ValueError(f"style {style} is not connected")
+        return (picked,)

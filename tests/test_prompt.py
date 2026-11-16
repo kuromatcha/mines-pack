@@ -45,5 +45,15 @@ class PromptSectionsTests(unittest.TestCase):
         self.assertEqual(result[3][0][0], "")
 
 
+class PickStyleTests(unittest.TestCase):
+    def test_only_the_picked_style_is_requested(self):
+        pick = prompt.MinesPickStyle()
+        self.assertEqual(pick.check_lazy_status(2, style_1=None, style_2=None, style_3=None), ["style_2"])
+        self.assertEqual(pick.check_lazy_status(2, style_2="b"), [])
+        self.assertEqual(pick.pick(3, style_1=None, style_2=None, style_3="c"), ("c",))
+        with self.assertRaises(ValueError):
+            pick.pick(1)
+
+
 if __name__ == "__main__":
     unittest.main()
