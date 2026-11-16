@@ -1,7 +1,7 @@
 """mine's pack: Prompt Sections, manual numbered PNG saving, and the nodes for the Mine's video workflows."""
 from .prompt import PromptSectionsCond
 from .save import NumberedPNGSaver
-from .video import MinesLoadImageOptional, MinesSVIProEndFrame
+from .video import MinesLoadImageOptional, MinesSVIProEndFrame, MinesH3FrameGuides
 from .color import MinesColorDriftFix, MinesKeepSourceColors
 from .mask import MinesBackgroundRemovalResolution, MinesMaskTemporalSmooth
 from .winfix import quiet_socket_reset
@@ -11,6 +11,7 @@ NODE_CLASS_MAPPINGS = {
     "NumberedPNGSaver": NumberedPNGSaver,
     "MinesLoadImageOptional": MinesLoadImageOptional,
     "MinesSVIProEndFrame": MinesSVIProEndFrame,
+    "MinesH3FrameGuides": MinesH3FrameGuides,
     "MinesColorDriftFix": MinesColorDriftFix,
     "MinesKeepSourceColors": MinesKeepSourceColors,
     "MinesBackgroundRemovalResolution": MinesBackgroundRemovalResolution,
@@ -21,6 +22,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "NumberedPNGSaver": "save",
     "MinesLoadImageOptional": "load image (optional)",
     "MinesSVIProEndFrame": "SVIPro end frame",
+    "MinesH3FrameGuides": "H3 frame guides",
     "MinesColorDriftFix": "color drift fix",
     "MinesKeepSourceColors": "keep source colors",
     "MinesBackgroundRemovalResolution": "background removal resolution",

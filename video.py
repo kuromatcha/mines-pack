@@ -4,6 +4,9 @@
   optional image (Wan First-Last-Frame to Video, SVIPro end frame) simply skips it.
 - SVIPro end frame: KJNodes' Wan Image To Video SVIPro, plus an optional end image that is placed on the last
   frame the same way the core Wan First-Last-Frame to Video node does it.
+- H3 frame guides: pins an optional first and an optional last frame onto MiniMax H3 conditioning with ComfyUI's
+  own Add Guide for MiniMax H3, so references (Ref2VA) and keyframes can be used in one clip. A missing frame
+  ("none" on load image (optional)) is skipped instead of raising an error.
 """
 import torch
 
@@ -96,3 +99,38 @@ class MinesSVIProEndFrame:
         positive = node_helpers.conditioning_set_values(positive, {"concat_latent_image": image_cond_latent, "concat_mask": mask})
         negative = node_helpers.conditioning_set_values(negative, {"concat_latent_image": image_cond_latent, "concat_mask": mask})
         return (positive, negative, {"samples": empty_latent})
+
+
+def _h3_add_guide():
+    from comfy_extras.nodes_minimax_h3 import MiniMaxH3AddGuide
+    return MiniMaxH3AddGuide
+
+
+class MinesH3FrameGuides:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+                    "positive": ("CONDITIONING",),
+                    "vae": ("VAE",),
+                    "latent": ("LATENT",),
+                },
+                "optional": {
+                    "first_frame": ("IMAGE",),
+                    "last_frame": ("IMAGE",),
+                }}
+
+    RETURN_TYPES = ("CONDITIONING",)
+    RETURN_NAMES = ("positive",)
+    FUNCTION = "guide"
+    CATEGORY = "conditioning/video_models"
+    DESCRIPTION = ("Pins the first frame at frame 0 and the last frame at the end of a MiniMax H3 video (ComfyUI's "
+                   "Add Guide for MiniMax H3). Works on Reference to Video conditioning, so references and keyframes "
+                   "can be combined. A frame that is not connected or set to none is skipped.")
+
+    def guide(self, positive, vae, latent, first_frame=None, last_frame=None):
+        add_guide = _h3_add_guide()
+        for image, frame_idx in ((first_frame, 0), (last_frame, -1)):
+            if image is None:
+                continue
+            positive = add_guide.execute(positive=positive, latent=latent, frame_idx=frame_idx, vae=vae, image=image[:1])[0]
+        return (positive,)
