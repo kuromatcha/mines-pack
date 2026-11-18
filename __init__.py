@@ -1,4 +1,4 @@
-"""mine's pack: Prompt Sections, manual numbered PNG saving, and the nodes for the Mine's video workflows."""
+"""mine's pack: prompt sections, save on click, inpaint crop and stitch, and the nodes for the Mine's video workflows."""
 from .prompt import PromptSectionsCond, MinesPickStyle
 from .save import NumberedPNGSaver
 from .video import MinesSVIProEndFrame, MinesH3FrameGuides

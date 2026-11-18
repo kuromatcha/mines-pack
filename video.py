@@ -1,4 +1,4 @@
-"""Image-to-video helpers for the Mine's video workflows (github.com/kuromatcha/mines-img2vid).
+"""Image-to-video helpers for the Mine's video workflows (github.com/kuromatcha/mines-I2V).
 
 - SVIPro end frame: KJNodes' Wan Image To Video SVIPro, plus an optional end image that is placed on the last
   frame the same way the core Wan First-Last-Frame to Video node does it.

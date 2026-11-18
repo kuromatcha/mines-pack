@@ -1,4 +1,4 @@
-"""Color fixes for generated video (Mine's video workflows, github.com/kuromatcha/mines-img2vid).
+"""Color fixes for generated video (Mine's video workflows, github.com/kuromatcha/mines-I2V).
 
 - color drift fix: removes slow color drift over a clip so later frames keep the tone of the first frame; in a
   loop the end matches the start.

@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-mines-pack"
 version = "1.1.0"
-description = "Prompt Sections, manual numbered PNG saving, and video helpers (SVIPro end frame, color drift fix) for ComfyUI."
+description = "Sectioned prompt node with presets, save-on-click numbered PNGs, inpaint crop and stitch, and video helpers (SVIPro end frame, H3 frame guides, color drift fix, keep source colors) for ComfyUI."
 requires-python = ">=3.10"
 
 [tool.comfy]
